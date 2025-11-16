@@ -1,98 +1,307 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+// File: `app/(tabs)/index.tsx`
+import React, { useState, useCallback } from 'react';
+import {
+    View,
+    StyleSheet,
+    ScrollView,
+    RefreshControl,
+    TouchableOpacity,
+} from 'react-native';
+import {
+    Text,
+    Title,
+    FAB,
+    Snackbar,
+    ActivityIndicator,
+} from 'react-native-paper';
+import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import StatCard from '../../components/StatCard';
+import IncidentCard from '../../components/IncidentCard';
+import { Colors } from '../../constants/colors';
+import { useIncidents } from '../../hooks/useIncidents';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    const router = useRouter();
+    const { incidents, loading, refresh } = useIncidents();
+    const [refreshing, setRefreshing] = useState(false);
+    const [snackbarVisible, setSnackbarVisible] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+    // Recarrega dados quando a tela ganha foco (volta do report)
+    useFocusEffect(
+        useCallback(() => {
+            refresh();
+        }, [])
+    );
+
+    // Calcula estatísticas
+    const stats = {
+        total: incidents.length,
+        pendentes: incidents.filter((i) => i.status === 'pendente').length,
+        resolvidas: incidents.filter((i) => i.status === 'resolvido').length,
+        emAndamento: incidents.filter((i) => i.status === 'em_andamento').length,
+    };
+
+    // Atualiza lista
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        try {
+            await refresh();
+            setSnackbarMessage('✅ Dados atualizados!');
+            setSnackbarVisible(true);
+        } catch (error) {
+            setSnackbarMessage('❌ Erro ao atualizar');
+            setSnackbarVisible(true);
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
+    // Navegação para registrar
+    const handleReportNewIncident = () => {
+        router.push('/(tabs)/report');
+    };
+
+    // Ordenar por mais recentes
+    const sortedIncidents = [...incidents].sort(
+        (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={Colors.primary} />
+                <Text style={styles.loadingText}>Carregando...</Text>
+            </View>
+        );
+    }
+
+    return (
+        <View style={styles.container}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContainer}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                        colors={[Colors.primary]}
+                        tintColor={Colors.primary}
+                    />
+                }
+            >
+                {/* Header */}
+                <View style={styles.header}>
+                    <View>
+                        <Title style={styles.title}>🚧 TapaBuraco</Title>
+                        <Text style={styles.subtitle}>Bem-vindo de volta!</Text>
+                    </View>
+                    <TouchableOpacity
+                        style={styles.profileButton}
+                        onPress={() => router.navigate('profile')}
+                    >
+                        <MaterialCommunityIcons
+                            name="account-circle"
+                            size={36}
+                            color={Colors.primary}
+                        />
+                    </TouchableOpacity>
+                </View>
+
+
+                {/* Estatísticas */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>📊 Resumo</Text>
+                    <StatCard
+                        title="Total de Denúncias"
+                        value={stats.total}
+                        icon="alert"
+                        color={Colors.primary}
+                        subtitle={`${stats.pendentes} pendentes`}
+                    />
+                    <StatCard
+                        title="Em Andamento"
+                        value={stats.emAndamento}
+                        icon="progress-clock"
+                        color={Colors.warning}
+                        subtitle="Sendo reparadas"
+                    />
+                    <StatCard
+                        title="Resolvidas"
+                        value={stats.resolvidas}
+                        icon="check-circle"
+                        color={Colors.success}
+                        subtitle="Obrigado por relatar!"
+                    />
+                </View>
+
+                {/* Incidentes Recentes */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>🔔 Incidentes Recentes</Text>
+                        <TouchableOpacity
+                            onPress={() => router.push('/(tabs)/incidents')}
+                        >
+                            <Text style={styles.seeAllLink}>Ver todos →</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {sortedIncidents.length > 0 ? (
+                        sortedIncidents.slice(0, 3).map((incident) => (
+                            <IncidentCard
+                                key={incident.id}
+                                {...incident}
+                                onPress={() => {
+                                    setSnackbarMessage(`Incidente #${incident.id} selecionado`);
+                                    setSnackbarVisible(true);
+                                }}
+                            />
+                        ))
+                    ) : (
+                        <View style={styles.emptyState}>
+                            <MaterialCommunityIcons
+                                name="inbox"
+                                size={64}
+                                color={Colors.textLight}
+                            />
+                            <Text style={styles.emptyStateText}>
+                                Nenhuma denúncia no momento
+                            </Text>
+                        </View>
+                    )}
+                </View>
+
+                {/* Info Card */}
+                <View style={styles.infoCard}>
+                    <MaterialCommunityIcons
+                        name="information"
+                        size={24}
+                        color={Colors.primary}
+                    />
+                    <Text style={styles.infoText}>
+                        Sua denúncia ajuda a melhorar as vias da sua cidade. Obrigado!
+                    </Text>
+                </View>
+            </ScrollView>
+
+            {/* FAB para registrar novo incidente */}
+            <FAB
+                icon="plus"
+                style={[styles.fab, { backgroundColor: Colors.primary }]}
+                onPress={handleReportNewIncident}
+                label="Registrar"
+                visible={true}
+            />
+
+            {/* Snackbar */}
+            <Snackbar
+                visible={snackbarVisible}
+                onDismiss={() => setSnackbarVisible(false)}
+                duration={3000}
+            >
+                {snackbarMessage}
+            </Snackbar>
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+    container: {
+        flex: 1,
+        backgroundColor: Colors.background,
+    },
+    scrollContainer: {
+        flexGrow: 1,
+        paddingBottom: 100,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: Colors.background,
+    },
+    loadingText: {
+        marginTop: 12,
+        fontSize: 16,
+        color: Colors.textLight,
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        backgroundColor: Colors.surface,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.border,
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: Colors.primary,
+        marginBottom: 4,
+    },
+    subtitle: {
+        fontSize: 14,
+        color: Colors.textLight,
+    },
+    profileButton: {
+        padding: 8,
+    },
+    section: {
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: Colors.text,
+        marginBottom: 12,
+    },
+    seeAllLink: {
+        fontSize: 14,
+        color: Colors.primary,
+        fontWeight: '600',
+    },
+    infoCard: {
+        flexDirection: 'row',
+        marginHorizontal: 16,
+        marginVertical: 16,
+        padding: 16,
+        backgroundColor: Colors.surface,
+        borderRadius: 12,
+        borderLeftWidth: 4,
+        borderLeftColor: Colors.primary,
+        gap: 12,
+        alignItems: 'center',
+    },
+    infoText: {
+        flex: 1,
+        fontSize: 14,
+        color: Colors.text,
+        fontWeight: '500',
+    },
+    emptyState: {
+        alignItems: 'center',
+        paddingVertical: 32,
+    },
+    emptyStateText: {
+        fontSize: 16,
+        color: Colors.textLight,
+        marginTop: 12,
+    },
+    fab: {
+        position: 'absolute',
+        margin: 16,
+        right: 0,
+        bottom: 0,
+    },
 });

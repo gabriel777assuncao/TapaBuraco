@@ -1,29 +1,44 @@
 {
   "expo": {
     "name": "TapaBuraco",
-    "slug": "TapaBuraco",
+    "slug": "tapaburaco",
+    "owner": "gabrielassuncao77",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "tapaburaco",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "userInterfaceStyle": "light",
+    "platforms": ["android", "ios"],
+    "web": {
+      "bundler": "metro"
+    },
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTabletMode": true,
+      "bundleIdentifier": "com.gabrielassuncao77.tapaburaco"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
-    },
-    "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ],
+      "package": "com.gabrielassuncao77.tapaburaco"
     },
     "plugins": [
       "expo-router",
@@ -38,11 +53,37 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permitir que o TapaBuraco acesse sua câmera para fotografar buracos.",
+          "microphonePermission": "Permitir acesso ao microfone (opcional)"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Permitir que o TapaBuraco use sua localização para registrar a posição exata do buraco.",
+          "isIosLocationWhenInUsePermissionDescription": "Usar sua localização para marcar o local do buraco no mapa."
+        }
       ]
     ],
-    "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "d9671278-769f-4309-9948-369c4f9acef8"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d9671278-769f-4309-9948-369c4f9acef8",
+      "fallbackToCacheTimeout": 1000,
+      "checkOnLaunch": "warning"
     }
   }
 }
